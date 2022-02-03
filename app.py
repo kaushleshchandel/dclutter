@@ -10,6 +10,8 @@ import argparse
 from PIL import Image, ImageFont, ImageDraw
 from font_hanken_grotesk import HankenGroteskBold, HankenGroteskMedium
 from font_intuitive import Intuitive
+from datetime import datetime
+
 
 # Set up RPi.GPIO with the "BCM" numbering scheme
 GPIO.setmode(GPIO.BCM)
@@ -24,6 +26,8 @@ GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 # These correspond to buttons A, B, C and D respectively
 LABELS = ['Next', 'Previous', 'Home', 'Clean']
 
+screenMode = 1
+
 # "handle_button" will be called every time a button is pressed
 # It receives one argument: the associated input pin.
 def handle_button(pin):
@@ -32,15 +36,9 @@ def handle_button(pin):
     if (BUTTONS.index(pin) == 3):
         clean() 
     if (BUTTONS.index(pin) == 0):
-        screen_balance() 
+        update_screen(screenMode)
         print("Button press detected on pin: {} label: {}".format(pin, label))
 
-
-#!/usr/bin/env python3
-
-inky_display = auto(ask_user=False, verbose=True)
-
-colors = ['Black', 'White', 'Green', 'Blue', 'Red', 'Yellow', 'Orange']
 
 # Ccle through teh colors
 def cycle():
@@ -60,6 +58,84 @@ def clean():
                 inky_display.set_pixel(x, y, CLEAN)
 
         inky_display.show()
+
+inky_display = auto(ask_user=False, verbose=True)
+colors = ['Black', 'White', 'Green', 'Blue', 'Red', 'Yellow', 'Orange']
+
+
+if inky_display.resolution == (400, 300):
+    scale_size = 1.2
+    padding = 15
+
+if inky_display.resolution == (600, 448):
+    scale_size = 2.20
+    padding = 30
+
+if inky_display.resolution == (250, 122):
+    scale_size = 1.30
+    padding = -5
+
+tiny_font  = ImageFont.truetype(HankenGroteskBold, int(10 * scale_size))
+small_font  = ImageFont.truetype(HankenGroteskBold, int(16 * scale_size))
+medium_font = ImageFont.truetype(HankenGroteskBold, int(20 * scale_size))
+large_font  = ImageFont.truetype(HankenGroteskBold, int(24 * scale_size))
+huge_font  = ImageFont.truetype(HankenGroteskBold, int(24 * scale_size))
+
+
+#Draw the background based on the Image Mode
+def draw_background(mode, img):
+
+    draw = ImageDraw.Draw(img)
+    inky_display.set_image(img) 
+    inky_display.show() #Clear the image
+
+    now = datetime.now()
+    current_time = now.strftime("%B %d, %I:%M%p")
+    y_top = int(inky_display.height * (5.0 / 10.0))
+    y_bottom = y_top + int(inky_display.height * (4.0 / 10.0))
+
+    time = current_time
+    name_w, name_h = medium_font.getsize(time)
+    name_x = int((inky_display.width - name_w) / 2)
+    name_y = 2 # int(y_top + ((y_bottom - y_top - name_h) / 2))
+    draw.text((name_x, name_y), time, inky_display.BLACK, font=medium_font)
+
+    top_margin = 40
+
+    draw.ellipse((inky_display.width - 15, top_margin + 10, inky_display.width -5 ,top_margin + 20), outline= inky_display.BLACK)
+    draw.ellipse((inky_display.width - 15, top_margin + 30, inky_display.width -5 ,top_margin + 40), outline= inky_display.BLACK)
+    draw.ellipse((inky_display.width - 15, top_margin + 50, inky_display.width -5 ,top_margin + 60), outline= inky_display.BLACK)
+    draw.ellipse((inky_display.width - 15, top_margin + 70, inky_display.width -5 ,top_margin + 80), outline= inky_display.BLACK)
+    draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), outline= inky_display.BLACK)
+
+    if mode == 1:
+        draw.ellipse((inky_display.width - 15, top_margin + 10, inky_display.width -5 ,top_margin + 20), fill= inky_display.BLACK)
+    if mode == 2:
+        draw.ellipse((inky_display.width - 15, top_margin + 30, inky_display.width -5 ,top_margin + 40), fill= inky_display.BLACK)
+    if mode == 3:
+        draw.ellipse((inky_display.width - 15, top_margin + 50, inky_display.width -5 ,top_margin + 60), fill= inky_display.BLACK)
+    if mode == 4:
+        draw.ellipse((inky_display.width - 15, top_margin + 70, inky_display.width -5 ,top_margin + 80), fill= inky_display.BLACK)
+    if mode == 5:
+        draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), fill= inky_display.BLACK)
+
+
+def update_screen(mode=1):
+    scale_size = 1.0
+    padding = 0
+
+    # Create a new canvas to draw on
+    img = Image.new("P", inky_display.resolution)
+
+    # Draw the background for the screen
+    draw_background(mode, img)
+
+    #Finally show the image
+    inky_display.set_image(img)
+    inky_display.show()
+
+
+update_screen(screenMode)
 
 
 # Refresh the screen
@@ -94,11 +170,7 @@ def screen_refresh():
     draw = ImageDraw.Draw(img)
 
     # Load the fonts
-
-    intuitive_font = ImageFont.truetype(Intuitive, int(22 * scale_size))
-    hanken_bold_font = ImageFont.truetype(HankenGroteskBold, int(35 * scale_size))
-    hanken_medium_font = ImageFont.truetype(HankenGroteskMedium, int(16 * scale_size))
-
+ 
     y_top = int(inky_display.height * (5.0 / 10.0))
     y_bottom = y_top + int(inky_display.height * (4.0 / 10.0))
     name = "Hello World"
@@ -108,18 +180,20 @@ def screen_refresh():
     name_w, name_h = intuitive_font.getsize(name)
     name_x = int((inky_display.width - name_w) / 2)
     name_y = int(y_top + ((y_bottom - y_top - name_h) / 2))
-    draw.text((name_x, name_y), name, inky_display.BLACK, font=hanken_bold_font)
+    draw.text((name_x, name_y), name, inky_display.BLACK, font=small_font)
 
 
     name_w, name_h = intuitive_font.getsize("Welcome to Inky")
     name_x = int((inky_display.width - name_w) / 2)
     name_y = int(y_top + ((y_bottom - y_top - name_h) / 2)) + 40
-    draw.text((name_x, name_y), "Welcome to Inky", inky_display.BLACK, font=hanken_medium_font)
+    draw.text((name_x, name_y), "Welcome to Inky", inky_display.BLACK, font=small_font)
 
     # Display the completed name badge
 
     inky_display.set_image(img)
     inky_display.show()
+
+
 
 
 # Refresh the screen
