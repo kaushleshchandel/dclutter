@@ -3,37 +3,22 @@
 
 import signal
 import RPi.GPIO as GPIO
-
 import time
-
 from inky.auto import auto
 from inky.inky_uc8159 import CLEAN
-
-
 import argparse
 from PIL import Image, ImageFont, ImageDraw
 from font_hanken_grotesk import HankenGroteskBold, HankenGroteskMedium
 from font_intuitive import Intuitive
 
-print("""buttons.py - Detect which button has been pressed
-
-This example should demonstrate how to:
- 1. set up RPi.GPIO to read buttons,
- 2. determine which button has been pressed
-
-Press Ctrl+C to exit!
-
-""")
-
-
 # Set up RPi.GPIO with the "BCM" numbering scheme
 GPIO.setmode(GPIO.BCM)
 
-BUTTONS = [5, 6, 16, 24] # Buttons for Color epaper
-GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+#BUTTONS = [5, 6, 16, 24] # Buttons for Color epaper
+#GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-#BUTTONS = [26, 19, 13, 6]
-#GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+BUTTONS = [26, 19, 13, 6]
+GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 
 # These correspond to buttons A, B, C and D respectively
@@ -54,7 +39,6 @@ def handle_button(pin):
 #!/usr/bin/env python3
 
 inky_display = auto(ask_user=False, verbose=True)
-
 
 colors = ['Black', 'White', 'Green', 'Blue', 'Red', 'Yellow', 'Orange']
 
