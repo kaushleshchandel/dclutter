@@ -123,6 +123,9 @@ def update_screen():
     inky_display.show()
 
 
+# Connect to MQTT to get the latest data
+
+
 while True: # Run forever
     #Handle button Press events
     if GPIO.input(BUTTONS[0]) == GPIO.HIGH: # Screen Up button
@@ -143,5 +146,11 @@ while True: # Run forever
         time.sleep(1)
     if GPIO.input(BUTTONS[3]) == GPIO.HIGH:
         time.sleep(1)
+
+
+    # new MQTT Message based Screen refresh
+    # Storing what data has chagned 
+
+    # Timer based screen refresh
 
 
