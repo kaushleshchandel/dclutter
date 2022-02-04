@@ -11,6 +11,21 @@ from PIL import Image, ImageFont, ImageDraw
 from font_hanken_grotesk import HankenGroteskBold, HankenGroteskMedium
 from font_intuitive import Intuitive
 from datetime import datetime
+import paho.mqtt.client as mqtt
+import os
+
+refreshTime = 60
+refreshTimeHome = 600
+
+def on_connect(client, userdata, flags, rc):
+    print(f"Connected with result code {rc}")
+    # subscribe, which need to put into on_connect
+    # if reconnect after losing the connection with the broker, it will continue to subscribe to the raspberry/topic to>    client.subscribe("inky/#")
+
+# the callback function, it will be triggered when receiving messages
+def on_message(client, userdata, msg):
+    print(f"{msg.topic} {msg.payload}")
+
 
 global CurrentScreenMode 
 
@@ -22,7 +37,7 @@ GPIO.setmode(GPIO.BCM)
 
 BUTTONS = [26, 19, 13, 6]
 GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-LABELS = ['Next', 'Previous', 'Home', 'Clean']
+LABELS = ['Up', 'Down', 'Home', 'Power']
 
 currentScreenMode = 1
 
@@ -74,19 +89,34 @@ huge_font  = ImageFont.truetype(HankenGroteskBold, int(24 * scale_size))
 def draw_background(mode, img):
 
     draw = ImageDraw.Draw(img)
-    #inky_display.set_image(img) 
-    #inky_display.show() #Clear the image
 
     now = datetime.now()
-    current_time = now.strftime("%B %d, %I:%M%p")
+    current_time = now.strftime(" %a - %b %d, %I:%M %p")
     y_top = int(inky_display.height * (5.0 / 10.0))
     y_bottom = y_top + int(inky_display.height * (4.0 / 10.0))
 
     time = current_time
-    name_w, name_h = medium_font.getsize(time)
-    name_x = int((inky_display.width - name_w) / 2)
+
     name_y = 2 # int(y_top + ((y_bottom - y_top - name_h) / 2))
-    draw.text((name_x, name_y), time, inky_display.BLACK, font=medium_font)
+    draw.text((0, name_y), time, inky_display.BLACK, font=medium_font)
+
+    if currentScreenMode == 1:
+        name_w, name_h = medium_font.getsize("[ MAIN ]")
+        name_x = int(inky_display.width - name_w)
+        draw.text((name_x, name_y), "[ MAIN ]", inky_display.BLACK, font=medium_font)
+    if currentScreenMode == 2:
+        name_w, name_h = medium_font.getsize("[ MONEY ]")
+        name_x = int(inky_display.width - name_w)
+        draw.text((name_x, name_y), "[ MONEY ]", inky_display.BLACK, font=medium_font)
+    if currentScreenMode == 3:
+        name_w, name_h = medium_font.getsize("[ HOME ]")
+        name_x = int(inky_display.width - name_w)
+        draw.text((name_x, name_y), "[ HOME ]", inky_display.BLACK, font=medium_font)
+    if currentScreenMode == 4:
+        name_w, name_h = medium_font.getsize("[ WORK ]")
+        name_x = int(inky_display.width - name_w)
+        draw.text((name_x, name_y), "[ WORK ]", inky_display.BLACK, font=medium_font)
+
 
     top_margin = 40
 
@@ -126,9 +156,47 @@ def update_screen():
 # Connect to MQTT to get the latest data
 
 
+client = mqtt.Client()
+client.on_connect = on_connect
+client.on_message = on_message
+
+# set the will message, when the Raspberry Pi is powered off, or the network is interrupted abnormally, it will send th>client.will_set('inky/status', b'{"status": "Off"}')
+# create connection, the three parameters are broker address, broker port number, and keep-alive time respectively
+client.connect("10.0.2.201", 1883, 60)
+
+client.subscribe("automation/#",1)
+# set the network loop blocking, it will not actively end the program before calling disconnect() or the program crash
+
+
+update_screen()
+client.loop_start()
+
+import time
+starttime = time.time()
+starttimeHome = time.time()
+
+def reboot():
+    print("Rebooting system")
+
+    # Create a new canvas to draw on
+    img = Image.new("P", inky_display.resolution)
+    y_top = int(inky_display.height * (5.0 / 10.0))
+    y_bottom = y_top + int(inky_display.height * (4.0 / 10.0))
+    draw = ImageDraw.Draw(img)
+
+    name_y = int(y_top + ((y_bottom - y_top - "Restarting...") / 2))
+    draw.text((0, name_y), "Restarting...", inky_display.BLACK, font=medium_font)
+
+    #Finally show the image
+    inky_display.set_image(img)
+    inky_display.show()
+    os.system('sudo shutdown -r now')
+
+
 while True: # Run forever
     #Handle button Press events
     if GPIO.input(BUTTONS[0]) == GPIO.HIGH: # Screen Up button
+        print("button A")
         time.sleep(1)
         if currentScreenMode < 2:
             currentScreenMode = 4
@@ -136,6 +204,7 @@ while True: # Run forever
             currentScreenMode = currentScreenMode - 1
         update_screen()
     if GPIO.input(BUTTONS[1]) == GPIO.HIGH: # Screen Down button
+        print("button B")
         time.sleep(1)
         if currentScreenMode > 3:
             currentScreenMode = 1
@@ -143,14 +212,35 @@ while True: # Run forever
             currentScreenMode = currentScreenMode + 1
         update_screen()
     if GPIO.input(BUTTONS[2]) == GPIO.HIGH:
+        print("button C")
         time.sleep(1)
     if GPIO.input(BUTTONS[3]) == GPIO.HIGH:
+        print("button D")
         time.sleep(1)
+    
+    time.sleep(0.1)
 
+    ### This will be updated every loop
+    remaining = refreshTime + starttime - time.time()
+    remaining_homepage = refreshTimeHome + starttimeHome - time.time()
+
+    ### Countdown finished, ending loop
+    if remaining <= 0:
+        starttime = time.time()
+        print("Refresh Screen")
+        update_screen()
+
+    if remaining_homepage <= 0:
+        starttimeHome = time.time()
+        print("Reset to home page")
+        currentScreenMode = 1
 
     # new MQTT Message based Screen refresh
     # Storing what data has chagned 
 
     # Timer based screen refresh
+    # Update how old certain data is
+
+    #Button Press should force a refresh
 
 
