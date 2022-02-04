@@ -12,12 +12,15 @@ from font_hanken_grotesk import HankenGroteskBold, HankenGroteskMedium
 from font_intuitive import Intuitive
 from datetime import datetime
 
+global CurrentScreenMode 
 
 # Set up RPi.GPIO with the "BCM" numbering scheme
 GPIO.setmode(GPIO.BCM)
 
 #BUTTONS = [5, 6, 16, 24] # Buttons for Color epaper
 #GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+currentScreenMode = 1
 
 BUTTONS = [26, 19, 13, 6]
 GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
@@ -26,7 +29,15 @@ GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 # These correspond to buttons A, B, C and D respectively
 LABELS = ['Next', 'Previous', 'Home', 'Clean']
 
-screenMode = 1
+
+def update_screenMode(ScreenMode, value):
+    ScreenMode = ScreenMode + value
+    if ScreenMode == 5:
+        ScreenMode = 1
+    if ScreenMode == 0:
+        ScreenMode = 4
+    
+
 
 # "handle_button" will be called every time a button is pressed
 # It receives one argument: the associated input pin.
@@ -36,7 +47,10 @@ def handle_button(pin):
     if (BUTTONS.index(pin) == 3):
         clean() 
     if (BUTTONS.index(pin) == 0):
-        update_screen(screenMode)
+        update_screenMode(currentScreenMode,1)
+        print("Button press detected on pin: {} label: {}".format(pin, label))
+    if (BUTTONS.index(pin) == 1):
+        update_screenMode(currentScreenMode, -1)
         print("Button press detected on pin: {} label: {}".format(pin, label))
 
 
@@ -106,7 +120,7 @@ def draw_background(mode, img):
     draw.ellipse((inky_display.width - 15, top_margin + 30, inky_display.width -5 ,top_margin + 40), outline= inky_display.BLACK)
     draw.ellipse((inky_display.width - 15, top_margin + 50, inky_display.width -5 ,top_margin + 60), outline= inky_display.BLACK)
     draw.ellipse((inky_display.width - 15, top_margin + 70, inky_display.width -5 ,top_margin + 80), outline= inky_display.BLACK)
-    draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), outline= inky_display.BLACK)
+#    draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), outline= inky_display.BLACK)
 
     if mode == 1:
         draw.ellipse((inky_display.width - 15, top_margin + 10, inky_display.width -5 ,top_margin + 20), fill= inky_display.BLACK)
@@ -116,11 +130,11 @@ def draw_background(mode, img):
         draw.ellipse((inky_display.width - 15, top_margin + 50, inky_display.width -5 ,top_margin + 60), fill= inky_display.BLACK)
     if mode == 4:
         draw.ellipse((inky_display.width - 15, top_margin + 70, inky_display.width -5 ,top_margin + 80), fill= inky_display.BLACK)
-    if mode == 5:
-        draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), fill= inky_display.BLACK)
+#    if mode == 5:
+#        draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), fill= inky_display.BLACK)
 
 
-def update_screen(mode=1):
+def update_screen():
     scale_size = 1.0
     padding = 0
 
@@ -128,14 +142,14 @@ def update_screen(mode=1):
     img = Image.new("P", inky_display.resolution)
 
     # Draw the background for the screen
-    draw_background(mode, img)
+    draw_background(currentScreenMode, img)
 
     #Finally show the image
     inky_display.set_image(img)
     inky_display.show()
 
 
-update_screen(screenMode)
+update_screen()
 
 
 # Refresh the screen
