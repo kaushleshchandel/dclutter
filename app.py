@@ -17,6 +17,8 @@ import os
 refreshTime = 60
 refreshTimeHome = 600
 
+print("Initializing....")
+
 def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
     # subscribe, which need to put into on_connect
@@ -32,11 +34,11 @@ global CurrentScreenMode
 # Set up RPi.GPIO with the "BCM" numbering scheme
 GPIO.setmode(GPIO.BCM)
 
-#BUTTONS = [5, 6, 16, 24] # Buttons for Color epaper
-#GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+BUTTONS = [5, 6, 16, 24] # Buttons for Color epaper
+GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
-BUTTONS = [26, 19, 13, 6]
-GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+#BUTTONS = [26, 19, 13, 6]
+#GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 LABELS = ['Up', 'Down', 'Home', 'Power']
 
 currentScreenMode = 1
@@ -142,20 +144,26 @@ def update_screen():
     scale_size = 1.0
     padding = 0
 
+    print("Img")
+
     # Create a new canvas to draw on
     img = Image.new("P", inky_display.resolution)
 
     # Draw the background for the screen
+    print("Draw background")
     draw_background(currentScreenMode, img)
 
+    print("Show image")
     #Finally show the image
     inky_display.set_image(img)
     inky_display.show()
+    print("Done")
 
 
 # Connect to MQTT to get the latest data
 
 
+print("Connecting to MQTT....")
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
@@ -164,18 +172,21 @@ client.on_message = on_message
 # create connection, the three parameters are broker address, broker port number, and keep-alive time respectively
 client.connect("10.0.2.201", 1883, 60)
 
+print("Subscribe to topic....")
 client.subscribe("automation/#",1)
 # set the network loop blocking, it will not actively end the program before calling disconnect() or the program crash
 
-
+print("Update screen....")
 update_screen()
+
+print("Start MQTT Loop....")
 client.loop_start()
 
 import time
 starttime = time.time()
 starttimeHome = time.time()
 
-def reboot():
+def reboot(shutdown=False):
     print("Rebooting system")
 
     # Create a new canvas to draw on
@@ -183,15 +194,16 @@ def reboot():
     y_top = int(inky_display.height * (5.0 / 10.0))
     y_bottom = y_top + int(inky_display.height * (4.0 / 10.0))
     draw = ImageDraw.Draw(img)
-
-    name_y = int(y_top + ((y_bottom - y_top - "Restarting...") / 2))
-    draw.text((0, name_y), "Restarting...", inky_display.BLACK, font=medium_font)
-
+    name_w, name_h = huge_font.getsize("Reboot")    
+    name_x = int((inky_display.width - name_w)/2)
+    draw.text((name_x, 80), "Reboot", inky_display.BLACK, font=huge_font)
     #Finally show the image
     inky_display.set_image(img)
     inky_display.show()
-    os.system('sudo shutdown -r now')
-
+    if shutdown == False:
+        os.system('sudo shutdown -r now')
+    else:
+        os.system('sudo shutdown now')
 
 while True: # Run forever
     #Handle button Press events
@@ -215,6 +227,7 @@ while True: # Run forever
         print("button C")
         time.sleep(1)
     if GPIO.input(BUTTONS[3]) == GPIO.HIGH:
+        reboot(False)
         print("button D")
         time.sleep(1)
     
