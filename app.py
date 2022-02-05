@@ -15,6 +15,7 @@ from datetime import datetime
 import paho.mqtt.client as mqtt
 import os
 from collections import namedtuple 
+import json
 
 #variables for stocks
 stock_new_pizero2w = 0
@@ -29,24 +30,9 @@ stock_old_pi42gb = 0
 stock_old_pi44gb = 0
 stock_old_pi48gb = 0
 
-#--------------
-# Data Format
-# automation/money/
-#   cc = {total=3000 ,mtd=2000, wtd=500, today=265}
-#   cash  = {total=}
-#   bills = {upcoming=3500}
-#   debt  = {total=20000, mtm=-3000 }
-# 
-# automation/home/
-#   mqttserver = online
-#   hassserver = online
-#   zigbeeserver = online
-#   dbserver = online
-#   vpnserver = online
 
-
-refreshTime = 60
-refreshTimeHome = 600
+refreshTime = 600
+refreshTimeHome = 3600
 print("Initializing....")
 
 
@@ -60,7 +46,7 @@ LABELS = ['Up', 'Down', 'Home', 'Power']
 # Set the Screen R                    solution and scale size
 if inky_display.resolution == (400, 300):
     scale_size = 1.2
-    padding = 15
+    padding = 25
     BUTTONS = [26, 19, 13, 6]
     GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
@@ -85,10 +71,34 @@ def on_connect(client, userdata, flags, rc):
 
 #--------------------------------------------
 # the callback function, it will be triggered when receiving messages
+
+#--------------
+# Data Format
+# automation/money/
+#   cash  = {"total":"6000"}
+#   cc    = {"total":"3000"}
+
+#   bills = {"upcoming":"3500"}
+#   debt  = {"total":"20000"}
+# 
+# automation/home/
+#   mqttserver = online
+#   hassserver = online
+#   zigbeeserver = online
+#   dbserver = online
+#   vpnserver = online
 #--------------------------------------------
 def on_message(client, userdata, msg):
     print(f"{msg.topic} {msg.payload}")
-
+    topic=msg.topic
+    m_decode=str(msg.payload.decode("utf-8","ignore"))
+    print("data Received type",type(m_decode))
+    print("data Received",m_decode)
+    print("Converting from Json to Object")
+    m_in=json.loads(m_decode) #decode json data
+    print(type(m_in))
+    print("total = ",m_in["cc"])
+    print("Cash = ",m_in["cash"])
 
 global CurrentScreenMode 
 currentScreenMode = 1
@@ -152,7 +162,6 @@ def draw_background(mode, img):
         draw.ellipse((inky_display.width - 15, top_margin + 70, inky_display.width -5 ,top_margin + 80), fill= inky_display.BLACK)
 #    if mode == 5:
 #        draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), fill= inky_display.BLACK)
-
 
 #--------------------------------------------
 # Update the Screen based on displa Mode
