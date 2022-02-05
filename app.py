@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Resolution = 600 x 448
 
+from email.headerregistry import ParameterizedMIMEHeader
 import signal
 import RPi.GPIO as GPIO
 import time
@@ -13,72 +14,84 @@ from font_intuitive import Intuitive
 from datetime import datetime
 import paho.mqtt.client as mqtt
 import os
+from collections import namedtuple 
+
+#variables for stocks
+stock_new_pizero2w = 0
+stock_new_pizerow = 0
+stock_new_pi42gb = 0
+stock_new_pi44gb = 0
+stock_new_pi48gb = 0
+
+stock_old_pizero2w = 0
+stock_old_pizerow = 0
+stock_old_pi42gb = 0
+stock_old_pi44gb = 0
+stock_old_pi48gb = 0
+
+#--------------
+# Data Format
+# automation/money/
+#   cc = {total=3000 ,mtd=2000, wtd=500, today=265}
+#   cash  = {total=}
+#   bills = {upcoming=3500}
+#   debt  = {total=20000, mtm=-3000 }
+# 
+# automation/home/
+#   mqttserver = online
+#   hassserver = online
+#   zigbeeserver = online
+#   dbserver = online
+#   vpnserver = online
+
 
 refreshTime = 60
 refreshTimeHome = 600
-
 print("Initializing....")
 
+
+#Initialize the display
+inky_display = auto(ask_user=False, verbose=True)
+colors = ['Black', 'White', 'Green', 'Blue', 'Red', 'Yellow', 'Orange']
+
+GPIO.setmode(GPIO.BCM) # Set up RPi.GPIO with the "BCM" numbering scheme
+LABELS = ['Up', 'Down', 'Home', 'Power']
+
+# Set the Screen R                    solution and scale size
+if inky_display.resolution == (400, 300):
+    scale_size = 1.2
+    padding = 15
+    BUTTONS = [26, 19, 13, 6]
+    GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+
+if inky_display.resolution == (600, 448):
+    scale_size = 2.20
+    padding = 30
+    BUTTONS = [5, 6, 16, 24] # Buttons for Color epaper
+    GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+
+if inky_display.resolution == (250, 122):
+    scale_size = 1.30
+    padding = -5
+
+
+#--------------------------------------------
+# Even fired when MQTT Connect
+#--------------------------------------------
 def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
     # subscribe, which need to put into on_connect
     # if reconnect after losing the connection with the broker, it will continue to subscribe to the raspberry/topic to>    client.subscribe("inky/#")
 
+#--------------------------------------------
 # the callback function, it will be triggered when receiving messages
+#--------------------------------------------
 def on_message(client, userdata, msg):
     print(f"{msg.topic} {msg.payload}")
 
 
 global CurrentScreenMode 
-
-# Set up RPi.GPIO with the "BCM" numbering scheme
-GPIO.setmode(GPIO.BCM)
-
-BUTTONS = [5, 6, 16, 24] # Buttons for Color epaper
-GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-#BUTTONS = [26, 19, 13, 6]
-#GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-LABELS = ['Up', 'Down', 'Home', 'Power']
-
 currentScreenMode = 1
-
-def update_screenMode(ScreenMode, value):
-    print("Old Screen Mode " + str(ScreenMode))
-    ScreenMode = ScreenMode + value
-    if ScreenMode == 5:
-        ScreenMode = 1
-    if ScreenMode == 0:
-        ScreenMode = 4
-    #update_screen()
-    print("New Screen Mode " + str(ScreenMode))
-    time.sleep(1)
-    return ScreenMode
-
-# Clean the Screen
-def clean():
-    for _ in range(1):
-        for y in range(inky_display.height - 1):
-            for x in range(inky_display.width - 1):
-                inky_display.set_pixel(x, y, CLEAN)
-
-        inky_display.show()
-
-inky_display = auto(ask_user=False, verbose=True)
-colors = ['Black', 'White', 'Green', 'Blue', 'Red', 'Yellow', 'Orange']
-
-# Set the Screen Rsolution and scale size
-if inky_display.resolution == (400, 300):
-    scale_size = 1.2
-    padding = 15
-
-if inky_display.resolution == (600, 448):
-    scale_size = 2.20
-    padding = 30
-
-if inky_display.resolution == (250, 122):
-    scale_size = 1.30
-    padding = -5
 
 tiny_font  = ImageFont.truetype(HankenGroteskBold, int(10 * scale_size))
 small_font  = ImageFont.truetype(HankenGroteskBold, int(16 * scale_size))
@@ -87,11 +100,12 @@ large_font  = ImageFont.truetype(HankenGroteskBold, int(24 * scale_size))
 huge_font  = ImageFont.truetype(HankenGroteskBold, int(24 * scale_size))
 
 
-#Draw the background based on the Image Mode
+#--------------------------------------------
+# Draw the background based on the Image Mode
+#--------------------------------------------
 def draw_background(mode, img):
 
     draw = ImageDraw.Draw(img)
-
     now = datetime.now()
     current_time = now.strftime(" %a - %b %d, %I:%M %p")
     y_top = int(inky_display.height * (5.0 / 10.0))
@@ -140,6 +154,9 @@ def draw_background(mode, img):
 #        draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), fill= inky_display.BLACK)
 
 
+#--------------------------------------------
+# Update the Screen based on displa Mode
+#--------------------------------------------
 def update_screen():
     scale_size = 1.0
     padding = 0
@@ -161,8 +178,6 @@ def update_screen():
 
 
 # Connect to MQTT to get the latest data
-
-
 print("Connecting to MQTT....")
 client = mqtt.Client()
 client.on_connect = on_connect
@@ -186,6 +201,9 @@ import time
 starttime = time.time()
 starttimeHome = time.time()
 
+#--------------------------------------------
+# Reboot the device
+#--------------------------------------------
 def reboot(shutdown=False):
     print("Rebooting system")
 
@@ -205,6 +223,10 @@ def reboot(shutdown=False):
     else:
         os.system('sudo shutdown now')
 
+
+#--------------------------------------------
+# MAIN LOOP
+#--------------------------------------------
 while True: # Run forever
     #Handle button Press events
     if GPIO.input(BUTTONS[0]) == GPIO.HIGH: # Screen Up button
@@ -251,9 +273,7 @@ while True: # Run forever
     # new MQTT Message based Screen refresh
     # Storing what data has chagned 
 
-    # Timer based screen refresh
     # Update how old certain data is
 
-    #Button Press should force a refresh
 
 
