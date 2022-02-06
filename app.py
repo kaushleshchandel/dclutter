@@ -26,25 +26,13 @@ inky_display = auto(ask_user=False, verbose=True)
 colors = ['Black', 'White', 'Green', 'Blue', 'Red', 'Yellow', 'Orange']
 
 GPIO.setmode(GPIO.BCM) # Set up RPi.GPIO with the "BCM" numbering scheme
-LABELS = ['Up', 'Down', 'Home', 'Power']
+BUTTON = 6
 
 # Set the Screen R                    solution and scale size
 if inky_display.resolution == (400, 300):
     scale_size = 1.2
     padding = 25
-    BUTTONS = [26, 19, 13, 6]
-    GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-
-if inky_display.resolution == (600, 448):
-    scale_size = 2.20
-    padding = 30
-    BUTTONS = [5, 6, 16, 24] # Buttons for Color epaper
-    GPIO.setup(BUTTONS, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-
-if inky_display.resolution == (250, 122):
-    scale_size = 1.30
-    padding = -5
-
+    GPIO.setup(BUTTON, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
 
 #--------------------------------------------
 # Even fired when MQTT Connect
@@ -230,19 +218,28 @@ starttimeHome = time.time()
 # Reboot the device
 #--------------------------------------------
 def reboot(shutdown=False):
-    print("Rebooting system")
 
     # Create a new canvas to draw on
     img = Image.new("P", inky_display.resolution)
     y_top = int(inky_display.height * (5.0 / 10.0))
     y_bottom = y_top + int(inky_display.height * (4.0 / 10.0))
     draw = ImageDraw.Draw(img)
-    name_w, name_h = huge_font.getsize("Reboot")    
-    name_x = int((inky_display.width - name_w)/2)
-    draw.text((name_x, 80), "Reboot", inky_display.BLACK, font=huge_font)
+
+    if shutdown == False:
+        print("Rebooting system")
+        name_w, name_h = huge_font.getsize("Reboot")    
+        name_x = int((inky_display.width - name_w)/2)
+        draw.text((name_x, 80), "Reboot", inky_display.BLACK, font=huge_font)
+    if shutdown == True:
+        print("Shut down system")
+        name_w, name_h = huge_font.getsize("Shutdown")    
+        name_x = int((inky_display.width - name_w)/2)
+        draw.text((name_x, 80), "Shutdown", inky_display.BLACK, font=huge_font)
+
     #Finally show the image
     inky_display.set_image(img)
     inky_display.show()
+
     if shutdown == False:
         os.system('sudo shutdown -r now')
     else:
@@ -254,30 +251,27 @@ def reboot(shutdown=False):
 #--------------------------------------------
 while True: # Run forever
     #Handle button Press events
-    if GPIO.input(BUTTONS[0]) == GPIO.HIGH: # Screen Up button
+    if GPIO.input(BUTTON) == GPIO.HIGH: # Screen Up button
         print("button A")
-        time.sleep(1)
-        if globals.currentScreenMode < 2:
-            globals.currentScreenMode = 4
-        else:
-            globals.currentScreenMode = globals.currentScreenMode - 1
-        update_screen()
-    if GPIO.input(BUTTONS[1]) == GPIO.HIGH: # Screen Down button
-        print("button B")
-        time.sleep(1)
-        if globals.currentScreenMode > 3:
-            globals.currentScreenMode = 1
-        else:
-            globals.currentScreenMode = globals.currentScreenMode + 1
-        update_screen()
-    if GPIO.input(BUTTONS[2]) == GPIO.HIGH:
-        print("button C")
-        time.sleep(1)
-    if GPIO.input(BUTTONS[3]) == GPIO.HIGH:
-        reboot(False)
-        print("button D")
-        time.sleep(1)
-    
+        button_pressed_for = 0
+ 
+        # Write logic here to count how long button is pressed
+        while GPIO.input(BUTTON) == GPIO.HIGH:
+            time.sleep(.1)
+            button_pressed_for += 1
+            if button_pressed_for > 100: #more than 10 seconds. Shutdown
+                reboot(True)
+
+        if button_pressed_for < 10: # Normal Press ccle screen
+            if globals.currentScreenMode > 3:
+                globals.currentScreenMode = 1
+            else:
+                globals.currentScreenMode = globals.currentScreenMode + 1
+            update_screen()
+
+        if button_pressed_for > 50: # Reboot device
+            reboot(False)
+
     time.sleep(0.1)
 
     ### This will be updated every loop
