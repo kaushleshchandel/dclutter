@@ -3,28 +3,45 @@ Declutter app for Raspberry Pi with Inky What
 
 ## For Raspberry pi, first clone the dclutter code
 
-
-
-Add this to startup to autoupdate the app.py file
+###1. Install Dependency
 
 ```
 pip install paho-mqtt
 ```
 
-
-#1. Crontab
-
-
-Edit the crontab file
+###2. Install Service
 
 ```
-sudo crontab -e
+sudo nano /lib/systemd/system/dclutter.service
 ```
 
-Add to the end of file
+Add content to the file 
 
-@reboot python3 /home/pi/dclutter/app.py > /home/pi/dclutter/app.log 2>&1
+```
+[Unit]
+Description=Declutter Service
+After=multi-user.target
+Requires=network.target
+[Service]
+Type=idle
+User=pi
+Restart=always
+ExecStart=/usr/bin/python /home/pi/dclutter/app.py > /home/pi/dclutter/service.log 2>&1
 
+[Install]
+WantedBy=multi-user.target
+```
+Test the service by 
+
+```
+sudo systemctl start dclutter.service
+```
+
+Enable the service using
+
+```
+sudo systemctl enable dclutter.service
+```
 
 
 
