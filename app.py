@@ -66,6 +66,13 @@ def on_connect(client, userdata, flags, rc):
 # automation/emails = {"mip":"2", "me":"20"}
 #--------------------------------------------
 
+tiny_font  = ImageFont.truetype(HankenGroteskBold, int(10 * scale_size))
+small_font  = ImageFont.truetype(HankenGroteskBold, int(16 * scale_size))
+medium_font = ImageFont.truetype(HankenGroteskBold, int(20 * scale_size))
+large_font  = ImageFont.truetype(HankenGroteskBold, int(24 * scale_size))
+huge_font  = ImageFont.truetype(HankenGroteskBold, int(24 * scale_size))
+
+
 def on_message(client, userdata, msg):
     print(f"{msg.topic} {msg.payload}")
     topic=msg.topic
@@ -82,13 +89,8 @@ def on_message(client, userdata, msg):
         globals.money_cash = int(m_in["cash"])
         globals.money_cc = int(m_in["cc"])
         globals.money_debt = int(m_in["debt"])
-        globals.money_paid = 2700 - globals.money_debt
-
-tiny_font  = ImageFont.truetype(HankenGroteskBold, int(10 * scale_size))
-small_font  = ImageFont.truetype(HankenGroteskBold, int(16 * scale_size))
-medium_font = ImageFont.truetype(HankenGroteskBold, int(20 * scale_size))
-large_font  = ImageFont.truetype(HankenGroteskBold, int(24 * scale_size))
-huge_font  = ImageFont.truetype(HankenGroteskBold, int(24 * scale_size))
+        globals.money_paid = globals.total_debt - globals.money_debt
+    globals.dataChanged = True
 
 
 #--------------------------------------------
@@ -148,11 +150,20 @@ def show_screen1(img):
      print("screen 1")
 
 
-def show_screen2(img, cash):
+def show_screen2(img):
      print("screen 2")
      draw = ImageDraw.Draw(img)
-     text = "Cash = " + str(cash)
-     draw.text((20, 20), text, inky_display.BLACK, font=medium_font)
+     #Start drawing the values
+     draw.text((0, 50), "Cash", inky_display.BLACK, font=huge_font)
+     draw.text((0, 100), "Credit", inky_display.BLACK, font=huge_font)
+     draw.text((0, 150), "Debt", inky_display.BLACK, font=huge_font)
+     draw.text((0, 200), "Paid", inky_display.BLACK, font=huge_font)
+
+
+     draw.text((100, 50), str(globals.money_cash), inky_display.BLACK, font=huge_font)
+     draw.text((100, 100), str(globals.money_cc), inky_display.BLACK, font=huge_font)
+     draw.text((100, 150), str(globals.money_debt), inky_display.BLACK, font=huge_font)
+     draw.text((100, 200), str(globals.money_paid), inky_display.BLACK, font=huge_font)
 
 def show_screen3(img):
      print("screen 3")
@@ -179,7 +190,7 @@ def update_screen():
     if globals.currentScreenMode == 1:
         show_screen1(img)        
     if globals.currentScreenMode == 2:
-        show_screen2(img, cash = globals.money_cash)        
+        show_screen2(img)        
     if globals.currentScreenMode == 3:
         show_screen3(img)        
     if globals.currentScreenMode == 4:
@@ -188,6 +199,7 @@ def update_screen():
     #Finally show the image
     inky_display.set_image(img)
     inky_display.show()
+    globals.dataChanged = False
 
 
 # Connect to MQTT to get the latest data
@@ -276,14 +288,17 @@ while True: # Run forever
     if remaining <= 0:
         starttime = time.time()
         print("Refresh Screen")
-        update_screen()
+        if globals.dataChanged == True:
+            update_screen()
 
     if remaining_homepage <= 0:
         starttimeHome = time.time()
         print("Reset to home page")
         globals.currentScreenMode = 1
+        globals.dataChanged = True
 
-    # new MQTT Message based Screen refresh
+    if globals.dataChanged == True:
+        update_screen()
     # Storing what data has chagned 
 
     # Update how old certain data is
