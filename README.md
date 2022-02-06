@@ -7,7 +7,13 @@ Declutter app for Raspberry Pi with Inky What
 
 Add this to startup to autoupdate the app.py file
 
+```
+pip install paho-mqtt
+```
+
+
 #1. Crontab
+
 
 Edit the crontab file
 
