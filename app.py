@@ -26,7 +26,7 @@ inky_display = auto(ask_user=False, verbose=True)
 colors = ['Black', 'White', 'Green', 'Blue', 'Red', 'Yellow', 'Orange']
 
 GPIO.setmode(GPIO.BCM) # Set up RPi.GPIO with the "BCM" numbering scheme
-BUTTON = 6
+BUTTON = 26
 
 # Set the Screen R                    solution and scale size
 if inky_display.resolution == (400, 300):
@@ -217,6 +217,26 @@ starttimeHome = time.time()
 #--------------------------------------------
 # Reboot the device
 #--------------------------------------------
+def reboot_shutdown_screen():
+
+    # Create a new canvas to draw on
+    img = Image.new("P", inky_display.resolution)
+    y_top = int(inky_display.height * (5.0 / 10.0))
+    y_bottom = y_top + int(inky_display.height * (4.0 / 10.0))
+    draw = ImageDraw.Draw(img)
+    name_w, name_h = huge_font.getsize("Hold 5 Sec to reboot")    
+    name_x = int((inky_display.width - name_w)/2)
+    draw.text((name_x, 80), "Hold 5 Sec to reboot", inky_display.BLACK, font=medium_font)
+    draw.text((name_x, 110), "Hold 10 Sec to shutdown", inky_display.BLACK, font=medium_font)
+
+    #Finally show the image
+    inky_display.set_image(img)
+    inky_display.show()
+
+
+#--------------------------------------------
+# Reboot the device
+#--------------------------------------------
 def reboot(shutdown=False):
 
     # Create a new canvas to draw on
@@ -252,24 +272,32 @@ def reboot(shutdown=False):
 while True: # Run forever
     #Handle button Press events
     if GPIO.input(BUTTON) == GPIO.HIGH: # Screen Up button
-        print("button A")
+#        print("button A")
         button_pressed_for = 0
  
         # Write logic here to count how long button is pressed
         while GPIO.input(BUTTON) == GPIO.HIGH:
+ #           print("button A Pressed")
             time.sleep(.1)
             button_pressed_for += 1
+            if button_pressed_for == 10:
+                reboot_shutdown_screen()
             if button_pressed_for > 100: #more than 10 seconds. Shutdown
+#                print("button A Short Press  for shutdown")
                 reboot(True)
 
+        print("button A Released after " + str(button_pressed_for))
         if button_pressed_for < 10: # Normal Press ccle screen
+#            print("button A Short Press")
             if globals.currentScreenMode > 3:
                 globals.currentScreenMode = 1
             else:
                 globals.currentScreenMode = globals.currentScreenMode + 1
             update_screen()
+            time.sleep(.5)
 
-        if button_pressed_for > 50: # Reboot device
+        if button_pressed_for > 40: # Reboot device
+#            print("button A Long Press for Reboot")
             reboot(False)
 
     time.sleep(0.1)
