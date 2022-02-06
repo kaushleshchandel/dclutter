@@ -3,13 +3,25 @@ Declutter app for Raspberry Pi with Inky What
 
 ## For Raspberry pi, first clone the dclutter code
 
-### 1. Install Dependency
+### 1. Install Drivers and dependencies
 
 ```
+curl https://get.pimoroni.com/inky | bash
+```
+
+Install MQTT Libraries
+
+```
+
 pip install paho-mqtt
 ```
 
-### 2. Install Service
+### 3. Clone the repository to home directory
+```
+git clone 
+```
+
+### 3. Install Service
 
 ```
 sudo nano /lib/systemd/system/dclutter.service
