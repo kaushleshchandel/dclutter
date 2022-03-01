@@ -138,43 +138,39 @@ def draw_background(mode, img):
 #        draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), fill= inky_display.BLACK)
 
 def show_screen1(img):
-     try:
-          tasks = api.get_tasks()
-          cnt = 0
-          for i in tasks:
-               cnt += 1
-               print(i.content)
-               draw = ImageDraw.Draw(img)
-     #Start drawing the values
-               draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
-     #draw.text((0, 100), "Credit", inky_display.BLACK, font=huge_font)
-     #draw.text((0, 150), "Debt", inky_display.BLACK, font=huge_font)
-     #draw.text((0, 200), "Paid", inky_display.BLACK, font=huge_font)
-
-     except Exception as error:
-          print(error)
+    try:
+        tasks = api.get_tasks()
+        cnt = 0
+        for i in tasks:
+            cnt += 1
+            print(i.content)
+            draw = ImageDraw.Draw(img)
+            draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
+    except Exception as error:
+        print(error)
+        draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
 
 
 def show_screen2(img):
-     print("screen 2")
-     draw = ImageDraw.Draw(img)
+    print("screen 2")
+    draw = ImageDraw.Draw(img)
      #Start drawing the values
-     draw.text((0, 50), "Cash", inky_display.BLACK, font=huge_font)
-     draw.text((0, 100), "Credit", inky_display.BLACK, font=huge_font)
-     draw.text((0, 150), "Debt", inky_display.BLACK, font=huge_font)
-     draw.text((0, 200), "Paid", inky_display.BLACK, font=huge_font)
+    draw.text((0, 50), "Cash", inky_display.BLACK, font=huge_font)
+    draw.text((0, 100), "Credit", inky_display.BLACK, font=huge_font)
+    draw.text((0, 150), "Debt", inky_display.BLACK, font=huge_font)
+    draw.text((0, 200), "Paid", inky_display.BLACK, font=huge_font)
 
 
-     draw.text((100, 50), str(globals.money_cash), inky_display.BLACK, font=huge_font)
-     draw.text((100, 100), str(globals.money_cc), inky_display.BLACK, font=huge_font)
-     draw.text((100, 150), str(globals.money_debt), inky_display.BLACK, font=huge_font)
-     draw.text((100, 200), str(globals.money_paid), inky_display.BLACK, font=huge_font)
+    draw.text((100, 50), str(globals.money_cash), inky_display.BLACK, font=huge_font)
+    draw.text((100, 100), str(globals.money_cc), inky_display.BLACK, font=huge_font)
+    draw.text((100, 150), str(globals.money_debt), inky_display.BLACK, font=huge_font)
+    draw.text((100, 200), str(globals.money_paid), inky_display.BLACK, font=huge_font)
 
 def show_screen3(img):
-     print("screen 3")
+    print("screen 3")
 
 def show_screen4(img):
-     print("screen 4")
+    print("screen 4")
 
 #--------------------------------------------
 # Update the Screen based on displa Mode
