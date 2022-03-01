@@ -15,8 +15,11 @@ from font_intuitive import Intuitive
 from datetime import datetime
 import paho.mqtt.client as mqtt
 import os
-from collections import namedtuple 
+from collections import namedtuple
 import json
+from todoist_api_python.api import TodoistAPI
+
+api = TodoistAPI('1697bd344b2b5fd64e675fa099c7a389ef729637')
 
 print("Initializing....")
 
@@ -135,7 +138,21 @@ def draw_background(mode, img):
 #        draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), fill= inky_display.BLACK)
 
 def show_screen1(img):
-     print("screen 1")
+     try:
+          tasks = api.get_tasks()
+          cnt = 0
+          for i in tasks:
+               cnt += 1
+               print(i.content)
+               draw = ImageDraw.Draw(img)
+     #Start drawing the values
+               draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
+     #draw.text((0, 100), "Credit", inky_display.BLACK, font=huge_font)
+     #draw.text((0, 150), "Debt", inky_display.BLACK, font=huge_font)
+     #draw.text((0, 200), "Paid", inky_display.BLACK, font=huge_font)
+
+     except Exception as error:
+          print(error)
 
 
 def show_screen2(img):
@@ -176,13 +193,13 @@ def update_screen():
     draw_background(globals.currentScreenMode, img)
 
     if globals.currentScreenMode == 1:
-        show_screen1(img)        
+        show_screen1(img)
     if globals.currentScreenMode == 2:
-        show_screen2(img)        
+        show_screen2(img)
     if globals.currentScreenMode == 3:
-        show_screen3(img)        
+        show_screen3(img)
     if globals.currentScreenMode == 4:
-        show_screen4(img)        
+        show_screen4(img)
 
     #Finally show the image
     inky_display.set_image(img)
@@ -224,7 +241,7 @@ def reboot_shutdown_screen():
     y_top = int(inky_display.height * (5.0 / 10.0))
     y_bottom = y_top + int(inky_display.height * (4.0 / 10.0))
     draw = ImageDraw.Draw(img)
-    name_w, name_h = huge_font.getsize("Hold 5 Sec to reboot")    
+    name_w, name_h = huge_font.getsize("Hold 5 Sec to reboot")
     name_x = int((inky_display.width - name_w)/2)
     draw.text((name_x, 80), "Hold 5 Sec to reboot", inky_display.BLACK, font=medium_font)
     draw.text((name_x, 110), "Hold 10 Sec to shutdown", inky_display.BLACK, font=medium_font)
@@ -247,12 +264,12 @@ def reboot(shutdown=False):
 
     if shutdown == False:
         print("Rebooting system")
-        name_w, name_h = huge_font.getsize("Reboot")    
+        name_w, name_h = huge_font.getsize("Reboot")
         name_x = int((inky_display.width - name_w)/2)
         draw.text((name_x, 80), "Reboot", inky_display.BLACK, font=huge_font)
     if shutdown == True:
         print("Shut down system")
-        name_w, name_h = huge_font.getsize("Shutdown")    
+        name_w, name_h = huge_font.getsize("Shutdown")
         name_x = int((inky_display.width - name_w)/2)
         draw.text((name_x, 80), "Shutdown", inky_display.BLACK, font=huge_font)
 
@@ -274,7 +291,7 @@ while True: # Run forever
     if GPIO.input(BUTTON) == GPIO.HIGH: # Screen Up button
 #        print("button A")
         button_pressed_for = 0
- 
+
         # Write logic here to count how long button is pressed
         while GPIO.input(BUTTON) == GPIO.HIGH:
  #           print("button A Pressed")
@@ -310,8 +327,8 @@ while True: # Run forever
     if remaining <= 0:
         starttime = time.time()
         print("Refresh Screen")
-        if globals.dataChanged == True:
-            update_screen()
+#        if globals.dataChanged == True:
+        update_screen()
 
     if remaining_homepage <= 0:
         starttimeHome = time.time()
@@ -321,9 +338,6 @@ while True: # Run forever
 
     if globals.dataChanged == True:
         update_screen()
-    # Storing what data has chagned 
+    # Storing what data has chagned
 
     # Update how old certain data is
-
-
-
