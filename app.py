@@ -12,7 +12,7 @@ import argparse
 from PIL import Image, ImageFont, ImageDraw
 from font_hanken_grotesk import HankenGroteskBold, HankenGroteskMedium
 from font_intuitive import Intuitive
-from datetime import datetime
+import datetime
 import paho.mqtt.client as mqtt
 import os
 from collections import namedtuple
@@ -20,7 +20,6 @@ import json
 from todoist_api_python.api import TodoistAPI
 
 api = TodoistAPI('1697bd344b2b5fd64e675fa099c7a389ef729637')
-
 print("Initializing....")
 
 
@@ -65,23 +64,24 @@ huge_font  = ImageFont.truetype(HankenGroteskBold, int(24 * scale_size))
 
 
 def on_message(client, userdata, msg):
-    print(f"{msg.topic} {msg.payload}")
-    topic=msg.topic
-    m_decode=str(msg.payload.decode("utf-8","ignore"))
-    print("data Received type",type(m_decode))
-    print("data Received",m_decode)
-    print("Converting from Json to Object")
-    m_in=json.loads(m_decode) #decode json data
+    print(msg)
+#    print(f"{msg.topic} {msg.payload}")
+#    topic=msg.topic
+#    m_decode=str(msg.payload.decode("utf-8","ignore"))
+#    print("data Received type",type(m_decode))
+#    print("data Received",m_decode)
+#    print("Converting from Json to Object")
+#    m_in=json.loads(m_decode) #decode json data
 
-    key =topic[11:]
-    print("key " + key)
+#    key =topic[11:]
+#    print("key " + key)
 
-    if key == "money":
-        globals.money_cash = int(m_in["cash"])
-        globals.money_cc = int(m_in["cc"])
-        globals.money_debt = int(m_in["debt"])
-        globals.money_paid = globals.total_debt - globals.money_debt
-    globals.dataChanged = True
+#    if key == "money":
+#        globals.money_cash = int(m_in["cash"])
+#        globals.money_cc = int(m_in["cc"])
+#        globals.money_debt = int(m_in["debt"])
+#        globals.money_paid = globals.total_debt - globals.money_debt
+#    globals.dataChanged = True
 
 
 #--------------------------------------------
@@ -90,7 +90,7 @@ def on_message(client, userdata, msg):
 def draw_background(mode, img):
 
     draw = ImageDraw.Draw(img)
-    now = datetime.now()
+    now = datetime.datetime.now()
     current_time = now.strftime(" %a - %b %d, %I:%M %p")
     y_top = int(inky_display.height * (5.0 / 10.0))
     y_bottom = y_top + int(inky_display.height * (4.0 / 10.0))
@@ -101,21 +101,21 @@ def draw_background(mode, img):
     draw.text((0, name_y), time, inky_display.BLACK, font=medium_font)
 
     if globals.currentScreenMode == 1:
-        name_w, name_h = medium_font.getsize("[ MAIN ]")
+        name_w, name_h = medium_font.getsize("[ GOALS ]")
         name_x = int(inky_display.width - name_w)
-        draw.text((name_x, name_y), "[ MAIN ]", inky_display.BLACK, font=medium_font)
+        draw.text((name_x, name_y), "[ GOALS ]", inky_display.BLACK, font=medium_font)
     if globals.currentScreenMode == 2:
-        name_w, name_h = medium_font.getsize("[ MONEY ]")
+        name_w, name_h = medium_font.getsize("[ WORK ]")
         name_x = int(inky_display.width - name_w)
-        draw.text((name_x, name_y), "[ MONEY ]", inky_display.BLACK, font=medium_font)
+        draw.text((name_x, name_y), "[ WORK ]", inky_display.BLACK, font=medium_font)
     if globals.currentScreenMode == 3:
         name_w, name_h = medium_font.getsize("[ HOME ]")
         name_x = int(inky_display.width - name_w)
         draw.text((name_x, name_y), "[ HOME ]", inky_display.BLACK, font=medium_font)
     if globals.currentScreenMode == 4:
-        name_w, name_h = medium_font.getsize("[ WORK ]")
+        name_w, name_h = medium_font.getsize("[ FAMILY ]")
         name_x = int(inky_display.width - name_w)
-        draw.text((name_x, name_y), "[ WORK ]", inky_display.BLACK, font=medium_font)
+        draw.text((name_x, name_y), "[ FAMILY ]", inky_display.BLACK, font=medium_font)
 
 
     top_margin = 40
@@ -137,21 +137,38 @@ def draw_background(mode, img):
 #    if mode == 5:
 #        draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), fill= inky_display.BLACK)
 
+# Show High Level Goals
 def show_screen1(img):
     try:
         tasks = api.get_tasks()
         cnt = 0
         for i in tasks:
-            cnt += 1
-            print(i.content)
-            draw = ImageDraw.Draw(img)
-            draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
+            if i.project_id == 2286310517: #Goals
+                cnt += 1
+                print(i.content)
+                draw = ImageDraw.Draw(img)
+                draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
+    except Exception as error:
+        print(error)
+        draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
+
+# Show Work related tasks
+def show_screen2(img):
+    try:
+        tasks = api.get_tasks()
+        cnt = 0
+        for i in tasks:
+            if i.project_id == 2281404655: #Work
+                cnt += 1
+                print(i.content)
+                draw = ImageDraw.Draw(img)
+                draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
     except Exception as error:
         print(error)
         draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
 
 
-def show_screen2(img):
+def show_screen2__(img):
     print("screen 2")
     draw = ImageDraw.Draw(img)
      #Start drawing the values
@@ -167,7 +184,18 @@ def show_screen2(img):
     draw.text((100, 200), str(globals.money_paid), inky_display.BLACK, font=huge_font)
 
 def show_screen3(img):
-    print("screen 3")
+    try:
+        tasks = api.get_tasks()
+        cnt = 0
+        for i in tasks:
+            if i.project_id == 2284647289: #Home after 5 PM
+                cnt += 1
+                print(i.content)
+                draw = ImageDraw.Draw(img)
+                draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
+    except Exception as error:
+        print(error)
+        draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
 
 def show_screen4(img):
     print("screen 4")
@@ -204,24 +232,24 @@ def update_screen():
 
 
 # Connect to MQTT to get the latest data
-print("Connecting to MQTT....")
-client = mqtt.Client()
-client.on_connect = on_connect
-client.on_message = on_message
+#print("Connecting to MQTT....")
+#client = mqtt.Client()
+#client.on_connect = on_connect
+#client.on_message = on_message
 
 # set the will message, when the Raspberry Pi is powered off, or the network is interrupted abnormally, it will send th>client.will_set('inky/status', b'{"status": "Off"}')
 # create connection, the three parameters are broker address, broker port number, and keep-alive time respectively
-client.connect("10.0.2.201", 1883, 60)
+#client.connect("10.0.2.201", 1883, 60)
 
-print("Subscribe to topic....")
-client.subscribe("automation/#",1)
+#print("Subscribe to topic....")
+#client.subscribe("automation/#",1)
 # set the network loop blocking, it will not actively end the program before calling disconnect() or the program crash
 
 print("Update screen....")
-update_screen()
+#update_screen()
 
-print("Start MQTT Loop....")
-client.loop_start()
+#print("Start MQTT Loop....")
+#client.loop_start()
 
 import time
 starttime = time.time()
@@ -278,12 +306,34 @@ def reboot(shutdown=False):
     else:
         os.system('sudo shutdown now')
 
+#Set the timeslots for switching teh default screen
 
+now = datetime.datetime.now()
+daily4am = now.replace(hour=4, minute=0, second=0, microsecond=0)
+now = datetime.datetime.now()
+daily7am = now.replace(hour=7, minute=0, second=0, microsecond=0)
+now = datetime.datetime.now()
+daily5pm = now.replace(hour=17, minute=0, second=0, microsecond=0)
+now = datetime.datetime.now()
+daily8pm = now.replace(hour=20, minute=0, second=0, microsecond=0)
+
+def check_timed_mode():
+    current_now = datetime.datetime.now()
+    if current_now > daily4am:
+        globals.currentScreenMode = 1 #Goals
+    if current_now > daily7am:
+        globals.currentScreenMode = 2 #Work Tasks
+    if current_now > daily5pm:
+        globals.currentScreenMode = 3 #Home 
+    if current_now > daily8pm:
+        globals.currentScreenMode = 4 #Personal
+         
 #--------------------------------------------
 # MAIN LOOP
 #--------------------------------------------
 while True: # Run forever
     #Handle button Press events
+    check_timed_mode()
     if GPIO.input(BUTTON) == GPIO.HIGH: # Screen Up button
 #        print("button A")
         button_pressed_for = 0
@@ -325,12 +375,6 @@ while True: # Run forever
         print("Refresh Screen")
 #        if globals.dataChanged == True:
         update_screen()
-
-    if remaining_homepage <= 0:
-        starttimeHome = time.time()
-        print("Reset to home page")
-        globals.currentScreenMode = 1
-        globals.dataChanged = True
 
     if globals.dataChanged == True:
         update_screen()
