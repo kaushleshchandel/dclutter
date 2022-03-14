@@ -116,7 +116,10 @@ def draw_background(mode, img):
         name_w, name_h = medium_font.getsize("[ FAMILY ]")
         name_x = int(inky_display.width - name_w)
         draw.text((name_x, name_y), "[ FAMILY ]", inky_display.BLACK, font=medium_font)
-
+    if globals.currentScreenMode == 5:
+        name_w, name_h = medium_font.getsize("[ POWER ]")
+        name_x = int(inky_display.width - name_w)
+        draw.text((name_x, name_y), "[ POWER ]", inky_display.BLACK, font=medium_font)
 
     top_margin = 40
 
@@ -124,7 +127,7 @@ def draw_background(mode, img):
     draw.ellipse((inky_display.width - 15, top_margin + 30, inky_display.width -5 ,top_margin + 40), outline= inky_display.BLACK)
     draw.ellipse((inky_display.width - 15, top_margin + 50, inky_display.width -5 ,top_margin + 60), outline= inky_display.BLACK)
     draw.ellipse((inky_display.width - 15, top_margin + 70, inky_display.width -5 ,top_margin + 80), outline= inky_display.BLACK)
-#    draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), outline= inky_display.BLACK)
+    draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), outline= inky_display.BLACK)
 
     if mode == 1:
         draw.ellipse((inky_display.width - 15, top_margin + 10, inky_display.width -5 ,top_margin + 20), fill= inky_display.BLACK)
@@ -134,13 +137,27 @@ def draw_background(mode, img):
         draw.ellipse((inky_display.width - 15, top_margin + 50, inky_display.width -5 ,top_margin + 60), fill= inky_display.BLACK)
     if mode == 4:
         draw.ellipse((inky_display.width - 15, top_margin + 70, inky_display.width -5 ,top_margin + 80), fill= inky_display.BLACK)
-#    if mode == 5:
-#        draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), fill= inky_display.BLACK)
+    if mode == 5:
+        draw.ellipse((inky_display.width - 15, top_margin + 90, inky_display.width -5 ,top_margin + 100), fill= inky_display.BLACK)
 
 # Show High Level Goals
+
+old_tasks =  api.get_tasks()
+tasks = old_tasks
+
+def get_tasks():
+    try:
+        new_tasks = api.get_tasks()
+        tasks = new_tasks
+        return tasks
+    except Exception as error:
+        print(error)
+        return old_tasks
+
+
 def show_screen1(img):
     try:
-        tasks = api.get_tasks()
+        #tasks = api.get_tasks()
         cnt = 0
         for i in tasks:
             if i.project_id == 2286310517: #Goals
@@ -155,7 +172,7 @@ def show_screen1(img):
 # Show Work related tasks
 def show_screen2(img):
     try:
-        tasks = api.get_tasks()
+        #tasks = api.get_tasks()
         cnt = 0
         for i in tasks:
             if i.project_id == 2281404655: #Work
@@ -185,7 +202,7 @@ def show_screen2__(img):
 
 def show_screen3(img):
     try:
-        tasks = api.get_tasks()
+        #tasks = api.get_tasks()
         cnt = 0
         for i in tasks:
             if i.project_id == 2284647289: #Home after 5 PM
@@ -198,7 +215,32 @@ def show_screen3(img):
         draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
 
 def show_screen4(img):
-    print("screen 4")
+    try:
+        #tasks = api.get_tasks()
+        cnt = 0
+        for i in tasks:
+            if i.project_id == 2281404695: #Home after 5 PM
+                cnt += 1
+                print(i.content)
+                draw = ImageDraw.Draw(img)
+                draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
+    except Exception as error:
+        print(error)
+        draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
+
+def show_screen5(img):
+    try:
+        #tasks = api.get_tasks()
+        cnt = 0
+        for i in tasks:
+            if i.project_id == 2286687989: #Home after 5 PM
+                cnt += 1
+                print(i.content)
+                draw = ImageDraw.Draw(img)
+                draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
+    except Exception as error:
+        print(error)
+        draw.text((10, 50+ cnt*20), str(cnt) + " "  +  str(i.content), inky_display.BLACK, font=small_font)
 
 #--------------------------------------------
 # Update the Screen based on displa Mode
@@ -206,9 +248,10 @@ def show_screen4(img):
 def update_screen():
     scale_size = 1.0
     padding = 0
-
+    
+    get_tasks()
     print("Img")
-
+    
     # Create a new canvas to draw on
     img = Image.new("P", inky_display.resolution)
 
@@ -224,6 +267,9 @@ def update_screen():
         show_screen3(img)
     if globals.currentScreenMode == 4:
         show_screen4(img)
+    if globals.currentScreenMode == 5:
+        show_screen5(img)
+
 
     #Finally show the image
     inky_display.set_image(img)
@@ -333,7 +379,7 @@ def check_timed_mode():
 #--------------------------------------------
 while True: # Run forever
     #Handle button Press events
-    check_timed_mode()
+#    check_timed_mode()
     if GPIO.input(BUTTON) == GPIO.HIGH: # Screen Up button
 #        print("button A")
         button_pressed_for = 0
@@ -352,10 +398,11 @@ while True: # Run forever
         print("button A Released after " + str(button_pressed_for))
         if button_pressed_for < 10: # Normal Press ccle screen
 #            print("button A Short Press")
-            if globals.currentScreenMode > 3:
+            if globals.currentScreenMode > 4:
                 globals.currentScreenMode = 1
             else:
                 globals.currentScreenMode = globals.currentScreenMode + 1
+            #get_tasks() 
             update_screen()
             time.sleep(.5)
 
